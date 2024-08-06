@@ -1,0 +1,11 @@
+{
+	"id": "MidoriHoshi_Background_try",
+	"name": "MidoriHoshi Background try (Hoshikawa version #1)",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "#First attempt at making Obsidian.md plugin.",
+	"author": "MidoriNoHoshi",
+	"authorUrl": "https://github.com/MidoriNoHoshi",
+	"Helpers": "Philip. . . . need to get his github page.",
+	"isDesktopOnly": true
+}
