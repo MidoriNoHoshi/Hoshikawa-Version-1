@@ -1,4 +1,6 @@
 node_modules/
-main.js.map
+dist/
 data.json
+.hotreload
+repomix-output.*
 .DS_Store
