@@ -37,6 +37,72 @@ ensure_deps() {
   fi
 }
 
+cmd_bump() {
+  local target="${1:-patch}"
+
+  node -e "
+    const fs = require('fs');
+
+    if (!fs.existsSync('manifest.json')) {
+      console.error('==> Error: manifest.json not found.');
+      process.exit(1);
+    }
+
+    const manifest = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
+    const currentVersion = manifest.version || '1.0.0';
+    const minAppVersion = manifest.minAppVersion || '1.0.0';
+
+    let nextVersion = '$target';
+
+    if (['patch', 'minor', 'major'].includes('$target')) {
+      const parts = currentVersion.split('.').map(Number);
+      if (parts.length !== 3 || parts.some(isNaN)) {
+        console.error('==> Error: Invalid semver format in manifest.json:', currentVersion);
+        process.exit(1);
+      }
+      if ('$target' === 'patch') parts[2] += 1;
+      if ('$target' === 'minor') { parts[1] += 1; parts[2] = 0; }
+      if ('$target' === 'major') { parts[0] += 1; parts[1] = 0; parts[2] = 0; }
+      nextVersion = parts.join('.');
+    } else {
+      if (!/^\d+\.\d+\.\d+$/.test(nextVersion)) {
+        console.error('==> Error: Target version must match x.y.z format, received:', nextVersion);
+        process.exit(1);
+      }
+    }
+
+    console.log(\`==> Bumping version: \${currentVersion} -> \${nextVersion}\`);
+
+    // 1. manifest.json
+    manifest.version = nextVersion;
+    fs.writeFileSync('manifest.json', JSON.stringify(manifest, null, '\t') + '\n');
+    console.log('    ✓ Updated manifest.json');
+
+    // 2. package.json
+    if (fs.existsSync('package.json')) {
+      const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+      pkg.version = nextVersion;
+      fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+      console.log('    ✓ Updated package.json');
+    }
+
+    // 3. versions.json
+    let versions = {};
+    if (fs.existsSync('versions.json')) {
+      try {
+        versions = JSON.parse(fs.readFileSync('versions.json', 'utf8'));
+      } catch (e) {
+        versions = {};
+      }
+    }
+    versions[nextVersion] = minAppVersion;
+    fs.writeFileSync('versions.json', JSON.stringify(versions, null, '\t') + '\n');
+    console.log(\`    ✓ Updated versions.json (\${nextVersion}: \${minAppVersion})\`);
+
+    console.log('==> Version bump complete.');
+  "
+}
+
 cmd_link() {
   mkdir -p "${VAULT_PLUGINS_BASE}"
 
@@ -186,14 +252,16 @@ Detected Plugin : ${PLUGIN_ID} (v${PLUGIN_VERSION})
 Vault Target    : ${VAULT_PLUGIN_DIR}
 
 Commands:
-  setup     Run npm install and establish vault symlink without starting build
-  dev       Verify dependencies, establish symlink, and start npm run dev (watch)
-  build     Verify dependencies, establish symlink, and run production build
-  link      Create/verify symlink from this repository to your vault
-  check     Run tsc, ESLint (if configured), and production build
-  release   Run full check suite and copy release assets into ./dist/
-  git       Print Git tag and GitHub release commands
-  help      Display this message
+  setup              Run npm install and establish vault symlink without starting build
+  dev                Verify dependencies, establish symlink, and start npm run dev (watch)
+  build              Verify dependencies, establish symlink, and run production build
+  bump [target]      Bump version across manifest, package, and versions.json
+                     target: patch (default) | minor | major | explicit (e.g. 1.0.2)
+  link               Create/verify symlink from this repository to your vault
+  check              Run tsc, ESLint (if configured), and production build
+  release            Run full check suite and copy release assets into ./dist/
+  git                Print Git tag and GitHub release commands
+  help               Display this message
 EOF
 }
 
@@ -201,6 +269,10 @@ case "${1:-help}" in
 setup) cmd_setup ;;
 dev) cmd_dev ;;
 build) cmd_build ;;
+bump)
+  shift
+  cmd_bump "${1:-patch}"
+  ;;
 link) cmd_link ;;
 check) cmd_check ;;
 release) cmd_release ;;

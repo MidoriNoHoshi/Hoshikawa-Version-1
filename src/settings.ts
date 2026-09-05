@@ -9,54 +9,54 @@ export class URL_SettingsTab extends PluginSettingTab {
     this.plugin = plugin;
   }
 
-  getSettingDefinitions() {
-    return [
-      {
-        name: "Reset to defaults",
-        description:
-          "Restore all background properties to default blank settings.",
-      },
-      {
-        name: "Image source",
-        description:
-          "Vault relative path (e.g., 'attachments/bg.png'), remote URL, or drop below.",
-      },
-      {
-        name: "Opacity",
-        description: "Adjust transparency (0 to 100%)",
-      },
-      {
-        name: "Blur",
-        description: "Apply gaussian blur in pixels",
-      },
-      {
-        name: "Contrast overlay",
-        description:
-          "Translucent contrast layer behind text to maintain legibility",
-      },
-      {
-        name: "Darkness overlay",
-        description: "Dim the background image (0 to 100%)",
-      },
-      {
-        name: "File navigator image source",
-        description: "Vault relative path, remote URL, or drop below.",
-      },
-      {
-        name: "File navigator opacity",
-        description: "Adjust transparency (0 to 100%)",
-      },
-      {
-        name: "File navigator blur",
-        description: "Apply gaussian blur in pixels",
-      },
-      {
-        name: "File navigator text shadow",
-        description:
-          "Adjust text shadow intensity for legibility (0 to disable)",
-      },
-    ];
-  }
+  // getSettingDefinitions() {
+  //   return [
+  //     {
+  //       name: "Reset to defaults",
+  //       description:
+  //         "Restore all background properties to default blank settings.",
+  //     },
+  //     {
+  //       name: "Image source",
+  //       description:
+  //         "Vault relative path (e.g., 'attachments/bg.png'), remote URL, or drop below.",
+  //     },
+  //     {
+  //       name: "Opacity",
+  //       description: "Adjust transparency (0 to 100%)",
+  //     },
+  //     {
+  //       name: "Blur",
+  //       description: "Apply gaussian blur in pixels",
+  //     },
+  //     {
+  //       name: "Contrast overlay",
+  //       description:
+  //         "Translucent contrast layer behind text to maintain legibility",
+  //     },
+  //     {
+  //       name: "Darkness overlay",
+  //       description: "Dim the background image (0 to 100%)",
+  //     },
+  //     {
+  //       name: "File navigator image source",
+  //       description: "Vault relative path, remote URL, or drop below.",
+  //     },
+  //     {
+  //       name: "File navigator opacity",
+  //       description: "Adjust transparency (0 to 100%)",
+  //     },
+  //     {
+  //       name: "File navigator blur",
+  //       description: "Apply gaussian blur in pixels",
+  //     },
+  //     {
+  //       name: "File navigator text shadow",
+  //       description:
+  //         "Adjust text shadow intensity for legibility (0 to disable)",
+  //     },
+  //   ];
+  // }
 
   display(): void {
     const { containerEl } = this;
