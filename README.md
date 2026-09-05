@@ -49,3 +49,11 @@ A minimal, zero-overhead background wallpaper plugin for Obsidian. Set custom wa
 3. Move the three downloaded files into that folder (manifest.json, styles.css, main.js)
 
 4. Reload Obsidian and enable the plugin in **Community plugins.**
+
+---
+
+## Personal Note
+
+3yrs ago, this was my first "real" programming project. I called it "Hoshikawa Version 1" or something like that. Anyway, I never put it onto obsidian community plugins because I was frustrated that I couldn't get local images to work and because I wanted way more customization like a colour picker (struggling to make a colour picker is what drew me further into programming). . . And all the important parts were 100% vibe coded or stolen.
+
+I greatly regret that I didn't just go a little harder and published it as is but oh well? I got my friends to use it anyway.
