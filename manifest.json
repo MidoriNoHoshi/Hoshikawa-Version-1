@@ -1,8 +1,8 @@
 {
   "id": "featherweight-local-wallpaper",
   "name": "Featherweight Local Wallpaper",
-  "version": "1.0.1",
-  "minAppVersion": "1.4.16",
+  "version": "1.0.2",
+  "minAppVersion": "1.13.0",
   "description": "Minimal, zero-overhead background wallpaper plugin supporting local vault files and remote URLs via CSS variables.",
   "author": "MidoriNoHoshi",
   "authorUrl": "https://github.com/MidoriNoHoshi",

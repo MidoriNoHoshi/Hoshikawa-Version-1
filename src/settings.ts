@@ -103,7 +103,6 @@ export class URL_SettingsTab extends PluginSettingTab {
         slider
           .setLimits(0, 100, 1)
           .setValue(Math.round(this.plugin.settings.editorOpacity * 100))
-          .setDynamicTooltip()
           .onChange(async (val) => {
             this.plugin.settings.editorOpacity = val / 100;
             await this.plugin.saveSettings();
@@ -117,7 +116,6 @@ export class URL_SettingsTab extends PluginSettingTab {
         slider
           .setLimits(0, 40, 1)
           .setValue(this.plugin.settings.editorBlur)
-          .setDynamicTooltip()
           .onChange(async (val) => {
             this.plugin.settings.editorBlur = val;
             await this.plugin.saveSettings();
@@ -143,7 +141,6 @@ export class URL_SettingsTab extends PluginSettingTab {
         slider
           .setLimits(0, 100, 5)
           .setValue(this.plugin.settings.darknessOverlay)
-          .setDynamicTooltip()
           .onChange(async (val) => {
             this.plugin.settings.darknessOverlay = val;
             await this.plugin.saveSettings();
@@ -174,7 +171,6 @@ export class URL_SettingsTab extends PluginSettingTab {
         slider
           .setLimits(0, 100, 1)
           .setValue(Math.round(this.plugin.settings.navOpacity * 100))
-          .setDynamicTooltip()
           .onChange(async (val) => {
             this.plugin.settings.navOpacity = val / 100;
             await this.plugin.saveSettings();
@@ -188,7 +184,6 @@ export class URL_SettingsTab extends PluginSettingTab {
         slider
           .setLimits(0, 40, 1)
           .setValue(this.plugin.settings.navBlur)
-          .setDynamicTooltip()
           .onChange(async (val) => {
             this.plugin.settings.navBlur = val;
             await this.plugin.saveSettings();
@@ -202,7 +197,6 @@ export class URL_SettingsTab extends PluginSettingTab {
         slider
           .setLimits(0, 5, 1)
           .setValue(this.plugin.settings.navTextShadow ?? 0)
-          .setDynamicTooltip()
           .onChange(async (val) => {
             this.plugin.settings.navTextShadow = val;
             await this.plugin.saveSettings();

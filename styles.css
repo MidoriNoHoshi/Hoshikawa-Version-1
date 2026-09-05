@@ -2,12 +2,12 @@
 .markdown-reading-view,
 .cm-editor,
 .cm-scroller {
-  background-color: transparent !important;
+  background-color: transparent;
 }
 
 .workspace-leaf-content[data-type="markdown"] .view-content {
   position: relative;
-  background-color: transparent !important;
+  background-color: transparent;
 }
 
 .markdown-reading-view,
@@ -55,12 +55,12 @@
 }
 
 .workspace-leaf-content[data-type="file-explorer"] .view-content {
-  background-color: transparent !important;
+  background-color: transparent;
 }
 
 .nav-files-container {
   position: relative;
-  background-color: transparent !important;
+  background-color: transparent;
 }
 
 .nav-files-container::before {
