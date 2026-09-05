@@ -17,8 +17,10 @@ fi
 
 if git remote get-url origin 2>/dev/null | grep -q 'github.com'; then
   REPO_URL=$(git remote get-url origin | sed -E 's/.*github\.com[:\/](.+?)(\.git)?$/https:\/\/github.com\/\1/')
+  REPO_OWNER=$(git remote get-url origin | sed -E 's/.*github\.com[:\/](.+?)\/.+?(\.git)?$/\1/')
 else
   REPO_URL="https://github.com/<username>/<repo>"
+  REPO_OWNER="<your-github-username>"
 fi
 
 VAULT_PLUGIN_DIR="${VAULT_PLUGINS_BASE}/${PLUGIN_ID}"
@@ -124,30 +126,54 @@ Plugin:  ${PLUGIN_ID}
 Version: ${PLUGIN_VERSION}
 Repo:    ${REPO_URL}
 
-1. Build production bundle and stage assets:
+----------------------------------------------------------------------
+1. RELEASE ASSETS & VERSION TAGGING
+----------------------------------------------------------------------
+Build & stage binaries:
    ./dev.sh release
 
-2. Stage source files and commit bump:
-   git add -A
-   git commit -m "chore(release): bump to version ${PLUGIN_VERSION}"
-
-3. Push changes and create version tag:
+Commit, push, and create tag:
    git push origin main
    git tag -a "${PLUGIN_VERSION}" -m "Release ${PLUGIN_VERSION}"
    git push origin "${PLUGIN_VERSION}"
 
-----------------------------------------------------------------------
-                           GITHUB RELEASES
-----------------------------------------------------------------------
-Web Interface:
-  1. Open: ${REPO_URL}/releases/new?tag=${PLUGIN_VERSION}
-  2. Upload ONLY the compiled binary assets from ./dist/:
+Publish GitHub Release:
+   Web: ${REPO_URL}/releases/new?tag=${PLUGIN_VERSION}
+   Upload ONLY the 3 compiled assets from ./dist/:
      - dist/manifest.json
      - dist/main.js
      - dist/styles.css (if present)
 
-GitHub CLI:
-  gh release create "${PLUGIN_VERSION}" dist/* --title "${PLUGIN_VERSION}" --notes "Release ${PLUGIN_VERSION}"
+----------------------------------------------------------------------
+2. COMMUNITY PLUGINS SUBMISSION (SHALLOW CLONE)
+----------------------------------------------------------------------
+Fork the official repository on GitHub:
+   https://github.com/obsidianmd/obsidian-releases (Click "Fork")
+
+Shallow clone your fork locally:
+   git clone --depth 1 https://github.com/${REPO_OWNER}/obsidian-releases.git
+   cd obsidian-releases
+   git checkout -b add-${PLUGIN_ID}
+
+Edit community-plugins.json (must maintain strict alphabetical order by id):
+   Find where "id": "${PLUGIN_ID}" fits alphabetically and insert:
+
+   {
+     "id": "${PLUGIN_ID}",
+     "name": "$(grep '"name"' manifest.json | head -1 | sed -E 's/.*"name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')",
+     "author": "$(grep '"author"' manifest.json | head -1 | sed -E 's/.*"author"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')",
+     "description": "$(grep '"description"' manifest.json | head -1 | sed -E 's/.*"description"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')",
+     "repo": "${REPO_OWNER}/${PLUGIN_ID}"
+   },
+
+Run the official validation suite:
+   npm install
+   npm test
+
+Commit, push, and open PR:
+   git add community-plugins.json
+   git commit -m "Add ${PLUGIN_ID}"
+   git push origin add-${PLUGIN_ID}
 ======================================================================
 EOF
 }
