@@ -1,0 +1,1005 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+src/
+  load.ts
+  settings.ts
+.gitignore
+.repomixignore
+dev.sh
+esbuild.config.mjs
+eslint.config.mjs
+manifest.json
+package.json
+README.md
+styles.css
+tsconfig.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="src/load.ts">
+import { Plugin, TFile, WorkspaceWindow } from "obsidian";
+import { URL_SettingsTab } from "./settings";
+
+export interface SettingsView {
+  editorImage: string;
+  editorOpacity: number;
+  editorBlur: number;
+  contrastInput: boolean;
+  darknessOverlay: number;
+  navImage: string;
+  navOpacity: number;
+  navBlur: number;
+  navTextShadow: number;
+}
+
+export const DEFAULT_VALUES: SettingsView = {
+  editorImage: "",
+  editorOpacity: 0.4,
+  editorBlur: 0,
+  contrastInput: false,
+  darknessOverlay: 0,
+  navImage: "",
+  navOpacity: 0.4,
+  navBlur: 0,
+  navTextShadow: 0,
+};
+
+export default class FeatherweightWallpaper extends Plugin {
+  settings: SettingsView;
+
+  async onload() {
+    await this.loadSettings();
+
+    this.addSettingTab(new URL_SettingsTab(this.app, this));
+
+    this.app.workspace.onLayoutReady(() => this.updateBackground(document));
+    this.registerEvent(
+      this.app.workspace.on("window-open", (win: WorkspaceWindow) =>
+        this.updateBackground(win.doc),
+      ),
+    );
+  }
+
+  onunload() {
+    this.clearBackground(document);
+  }
+
+  async loadSettings() {
+    this.settings = Object.assign({}, DEFAULT_VALUES, await this.loadData());
+  }
+
+  async saveSettings() {
+    await this.saveData(this.settings);
+    this.updateBackground();
+  }
+
+  async resetSettings() {
+    this.settings = Object.assign({}, DEFAULT_VALUES);
+    await this.saveSettings();
+  }
+
+  resolveImagePath(rawPath: string): string {
+    const trimmed = rawPath.trim();
+    if (!trimmed) return "none";
+
+    // Direct remote web address
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+      return `url('${trimmed}')`;
+    }
+
+    // Vault local path
+    const file = this.app.vault.getAbstractFileByPath(trimmed);
+    if (file instanceof TFile) {
+      const resourcePath = this.app.vault.adapter.getResourcePath(file.path);
+      return `url('${resourcePath}')`;
+    }
+
+    // Fallback: try raw string if user provided absolute path/local uri
+    return `url('${trimmed}')`;
+  }
+
+  updateBackground(doc: Document = activeDocument) {
+    const editorImg = this.resolveImagePath(this.settings.editorImage);
+    const navImg = this.resolveImagePath(this.settings.navImage);
+    const shadow = this.settings.navTextShadow;
+
+    doc.body.style.setProperty("--obsidian-editor-background-image", editorImg);
+    doc.body.style.setProperty(
+      "--obsidian-editor-background-opacity",
+      `${this.settings.editorOpacity}`,
+    );
+    doc.body.style.setProperty(
+      "--obsidian-editor-background-bluriness",
+      `${this.settings.editorBlur}px`,
+    );
+    doc.body.style.setProperty(
+      "--obsidian-editor-background-input-contrast",
+      this.settings.contrastInput ? "rgba(255, 255, 255, 0.08)" : "none",
+    );
+    doc.body.style.setProperty(
+      "--obsidian-editor-background-darkness-overlay",
+      `rgba(0, 0, 0, ${this.settings.darknessOverlay / 100})`,
+    );
+
+    doc.body.style.setProperty("--obsidian-nav-background-pos", navImg);
+    doc.body.style.setProperty(
+      "--obsidian-nav-background-posOpacity",
+      `${this.settings.navOpacity}`,
+    );
+    doc.body.style.setProperty(
+      "--obsidian-nav-background-Posblur",
+      `${this.settings.navBlur}px`,
+    );
+    const shadowValue =
+      shadow > 0
+        ? `1px 1px ${shadow * 2}px rgba(0, 0, 0, ${Math.min(1, shadow * 0.15)})`
+        : "none";
+    doc.body.style.setProperty("--obsidian-nav-text-shadow", shadowValue);
+  }
+
+  clearBackground(doc: Document = activeDocument) {
+    doc.body.style.removeProperty("--obsidian-editor-background-image");
+    doc.body.style.removeProperty("--obsidian-editor-background-opacity");
+    doc.body.style.removeProperty("--obsidian-editor-background-bluriness");
+    doc.body.style.removeProperty(
+      "--obsidian-editor-background-input-contrast",
+    );
+    doc.body.style.removeProperty(
+      "--obsidian-editor-background-darkness-overlay",
+    );
+    doc.body.style.removeProperty("--obsidian-nav-background-pos");
+    doc.body.style.removeProperty("--obsidian-nav-background-posOpacity");
+    doc.body.style.removeProperty("--obsidian-nav-background-Posblur");
+    doc.body.style.removeProperty("--obsidian-nav-text-shaodw");
+  }
+}
+</file>
+
+<file path="src/settings.ts">
+import FeatherweightWallpaper from "./load";
+import { App, PluginSettingTab, Setting, TFile, normalizePath } from "obsidian";
+
+export class URL_SettingsTab extends PluginSettingTab {
+  plugin: FeatherweightWallpaper;
+
+  constructor(app: App, plugin: FeatherweightWallpaper) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
+
+  display(): void {
+    const { containerEl } = this;
+    containerEl.empty();
+
+    new Setting(containerEl)
+      .setName("Reset to defaults")
+      .setDesc("Restore all background properties to default blank settings.")
+      .addButton((button) => {
+        button
+          .setButtonText("Reset")
+          .setWarning()
+          .onClick(async () => {
+            await this.plugin.resetSettings();
+            this.display();
+          });
+      });
+
+    containerEl.createEl("h3", { text: "Editor Background" });
+
+    new Setting(containerEl)
+      .setName("Image source")
+      .setDesc(
+        "Vault relative path (e.g., 'attachments/bg.png'), remote URL, or drop below.",
+      )
+      .addText((text) =>
+        text
+          .setPlaceholder("attachments/wallpaper.png")
+          .setValue(this.plugin.settings.editorImage)
+          .onChange(async (val) => {
+            this.plugin.settings.editorImage = val;
+            await this.plugin.saveSettings();
+          }),
+      );
+
+    this.renderDragDrop(containerEl, "editorImage");
+
+    new Setting(containerEl)
+      .setName("Opacity")
+      .setDesc("Adjust transparency (0 to 100%)")
+      .addSlider((slider) =>
+        slider
+          .setLimits(0, 100, 1)
+          .setValue(Math.round(this.plugin.settings.editorOpacity * 100))
+          .setDynamicTooltip()
+          .onChange(async (val) => {
+            this.plugin.settings.editorOpacity = val / 100;
+            await this.plugin.saveSettings();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName("Blur")
+      .setDesc("Apply gaussian blur in pixels")
+      .addSlider((slider) =>
+        slider
+          .setLimits(0, 40, 1)
+          .setValue(this.plugin.settings.editorBlur)
+          .setDynamicTooltip()
+          .onChange(async (val) => {
+            this.plugin.settings.editorBlur = val;
+            await this.plugin.saveSettings();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName("Contrast overlay")
+      .setDesc("Translucent contrast layer behind text to maintain legibility")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.contrastInput)
+          .onChange(async (val) => {
+            this.plugin.settings.contrastInput = val;
+            await this.plugin.saveSettings();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName("Darkness overlay")
+      .setDesc("Dim the background image (0 to 100%)")
+      .addSlider((slider) =>
+        slider
+          .setLimits(0, 100, 5)
+          .setValue(this.plugin.settings.darknessOverlay)
+          .setDynamicTooltip()
+          .onChange(async (val) => {
+            this.plugin.settings.darknessOverlay = val;
+            await this.plugin.saveSettings();
+          }),
+      );
+
+    containerEl.createEl("h3", { text: "File Navigator Background" });
+
+    new Setting(containerEl)
+      .setName("File navigator image source")
+      .setDesc("Vault relative path, remote URL, or drop below.")
+      .addText((text) =>
+        text
+          .setPlaceholder("attachments/nav-wallpaper.png")
+          .setValue(this.plugin.settings.navImage)
+          .onChange(async (val) => {
+            this.plugin.settings.navImage = val;
+            await this.plugin.saveSettings();
+          }),
+      );
+
+    this.renderDragDrop(containerEl, "navImage");
+
+    new Setting(containerEl)
+      .setName("File navigator opacity")
+      .setDesc("Adjust transparency (0 to 100%)")
+      .addSlider((slider) =>
+        slider
+          .setLimits(0, 100, 1)
+          .setValue(Math.round(this.plugin.settings.navOpacity * 100))
+          .setDynamicTooltip()
+          .onChange(async (val) => {
+            this.plugin.settings.navOpacity = val / 100;
+            await this.plugin.saveSettings();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName("File navigator blur")
+      .setDesc("Apply gaussian blur in pixels")
+      .addSlider((slider) =>
+        slider
+          .setLimits(0, 40, 1)
+          .setValue(this.plugin.settings.navBlur)
+          .setDynamicTooltip()
+          .onChange(async (val) => {
+            this.plugin.settings.navBlur = val;
+            await this.plugin.saveSettings();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName("File navigator text shadow")
+      .setDesc("Adjust text shadow intensity for legibility (0 to disable)")
+      .addSlider((slider) =>
+        slider
+          .setLimits(0, 5, 1)
+          .setValue(this.plugin.settings.navTextShadow ?? 0)
+          .setDynamicTooltip()
+          .onChange(async (val) => {
+            this.plugin.settings.navTextShadow = val;
+            await this.plugin.saveSettings();
+          }),
+      );
+  }
+
+  private renderDragDrop(
+    parentEl: HTMLElement,
+    targetKey: "editorImage" | "navImage",
+  ) {
+    const dropBox = parentEl.createDiv({ cls: "wallpaper-drop-zone" });
+
+    dropBox.createSpan({
+      cls: "wallpaper-drop-zone-plus",
+      text: "+",
+    });
+    dropBox.createSpan({
+      cls: "wallpaper-drop-zone-text",
+      text: "Drag & drop image file",
+    });
+
+    const preventDefault = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    dropBox.addEventListener("dragenter", (e) => {
+      preventDefault(e);
+      dropBox.addClass("is-dragover");
+    });
+
+    dropBox.addEventListener("dragover", (e) => {
+      preventDefault(e);
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = "copy";
+      }
+      dropBox.addClass("is-dragover");
+    });
+
+    dropBox.addEventListener("dragleave", (e) => {
+      preventDefault(e);
+      dropBox.removeClass("is-dragover");
+    });
+
+    dropBox.addEventListener("drop", async (e: DragEvent) => {
+      preventDefault(e);
+      dropBox.removeClass("is-dragover");
+
+      // Vault item drag
+      const rawData = e.dataTransfer?.getData("text/plain") || "";
+      if (rawData) {
+        let cleaned = rawData.replace(/^\[\[(.*?)\]\]$/, "$1").trim();
+        if (cleaned.includes("?file=")) {
+          const fileParam = new URL(cleaned).searchParams.get("file");
+          if (fileParam) cleaned = decodeURIComponent(fileParam);
+        }
+
+        let file = this.app.vault.getAbstractFileByPath(cleaned);
+        if (!file) {
+          file = this.app.metadataCache.getFirstLinkpathDest(cleaned, "");
+        }
+
+        if (file instanceof TFile && this.isImageFile(file.name)) {
+          this.plugin.settings[targetKey] = file.path;
+          await this.plugin.saveSettings();
+          this.display();
+          return;
+        }
+      }
+
+      // OS desktop/file explorer drag
+      const files = e.dataTransfer?.files;
+      if (!files || files.length === 0) return;
+
+      const file = files[0];
+      if (!file.type.startsWith("image/") && !this.isImageFile(file.name)) {
+        return;
+      }
+
+      const buffer = await file.arrayBuffer();
+      const folder = "_wallpapers";
+
+      if (!this.app.vault.getAbstractFileByPath(folder)) {
+        await this.app.vault.createFolder(folder);
+      }
+
+      const targetPath = normalizePath(`${folder}/${file.name}`);
+      const existing = this.app.vault.getAbstractFileByPath(targetPath);
+
+      if (existing instanceof TFile) {
+        await this.app.vault.modifyBinary(existing, buffer);
+      } else {
+        await this.app.vault.createBinary(targetPath, buffer);
+      }
+
+      this.plugin.settings[targetKey] = targetPath;
+      await this.plugin.saveSettings();
+      this.display();
+    });
+  }
+
+  private isImageFile(fileName: string): boolean {
+    return /\.(png|jpe?g|webp|gif|svg|bmp)$/i.test(fileName);
+  }
+}
+</file>
+
+<file path=".gitignore">
+node_modules/
+main.js.map
+data.json
+.DS_Store
+</file>
+
+<file path=".repomixignore">
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+main.js
+main.js.map
+dist/
+build/
+*.tsbuildinfo
+
+data.json
+.hotreload
+
+repomix-output.xml
+repomix-output.txt
+repomix-output.json
+
+.git/
+.DS_Store
+Thumbs.db
+</file>
+
+<file path="dev.sh">
+#!/usr/bin/env bash
+set -euo pipefail
+
+VAULT_PLUGINS_BASE="${OBSIDIAN_VAULT_PLUGINS:-$HOME/Aki Tatsuyama/.obsidian/plugins}"
+
+if [ -f "manifest.json" ] && grep -q '"id"' manifest.json; then
+  PLUGIN_ID=$(grep '"id"' manifest.json | head -1 | sed -E 's/.*"id"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')
+else
+  PLUGIN_ID=$(basename "$(pwd)")
+fi
+
+if [ -f "manifest.json" ] && grep -q '"version"' manifest.json; then
+  PLUGIN_VERSION=$(grep '"version"' manifest.json | head -1 | sed -E 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')
+else
+  PLUGIN_VERSION="1.0.0"
+fi
+
+if git remote get-url origin 2>/dev/null | grep -q 'github.com'; then
+  REPO_URL=$(git remote get-url origin | sed -E 's/.*github\.com[:\/](.+?)(\.git)?$/https:\/\/github.com\/\1/')
+else
+  REPO_URL="https://github.com/<username>/<repo>"
+fi
+
+VAULT_PLUGIN_DIR="${VAULT_PLUGINS_BASE}/${PLUGIN_ID}"
+
+ensure_deps() {
+  if [ ! -d "node_modules" ]; then
+    if [ -f "package.json" ]; then
+      echo "==> node_modules missing. Installing dependencies..."
+      npm install
+    else
+      echo "==> Error: No package.json found in current directory."
+      exit 1
+    fi
+  fi
+}
+
+cmd_link() {
+  mkdir -p "${VAULT_PLUGINS_BASE}"
+
+  if [ -L "${VAULT_PLUGIN_DIR}" ]; then
+    local current_target
+    current_target=$(readlink "${VAULT_PLUGIN_DIR}")
+    if [ "${current_target}" = "$(pwd)" ]; then
+      return 0
+    fi
+    rm "${VAULT_PLUGIN_DIR}"
+  fi
+
+  if [ -d "${VAULT_PLUGIN_DIR}" ]; then
+    local backup="${VAULT_PLUGIN_DIR}.bak-$(date +%s)"
+    echo "==> Existing directory found. Moving to ${backup}"
+    mv "${VAULT_PLUGIN_DIR}" "${backup}"
+  fi
+
+  ln -s "$(pwd)" "${VAULT_PLUGIN_DIR}"
+  echo "==> Symlink active: ${VAULT_PLUGIN_DIR} -> $(pwd)"
+}
+
+cmd_setup() {
+  echo "==> Initializing environment for '${PLUGIN_ID}'..."
+  ensure_deps
+  cmd_link
+  echo "==> Setup complete."
+}
+
+cmd_dev() {
+  ensure_deps
+  cmd_link
+  echo "==> Starting build watcher for '${PLUGIN_ID}'..."
+  touch .hotreload 2>/dev/null || true
+  exec npm run dev
+}
+
+cmd_build() {
+  ensure_deps
+  cmd_link
+  echo "==> Running production build for '${PLUGIN_ID}'..."
+  npm run build
+}
+
+cmd_check() {
+  ensure_deps
+  if [ -f "tsconfig.json" ]; then
+    echo "==> Running TypeScript compiler check..."
+    npx tsc --noEmit
+  fi
+
+  if npm run | grep -qE '^[[:space:]]*lint$'; then
+    echo "==> Running linter..."
+    npm run lint
+  elif [ -f "eslint.config.mjs" ] || [ -f "eslint.config.js" ] || [ -f ".eslintrc.json" ] || [ -f ".eslintrc.js" ]; then
+    echo "==> Running ESLint..."
+    npx eslint .
+  fi
+
+  cmd_build
+  echo "==> All checks passed."
+}
+
+cmd_release() {
+  cmd_check
+  echo "==> Packaging into ./dist..."
+  rm -rf dist
+  mkdir -p dist
+
+  if [ -f "styles.css" ]; then
+    cp styles.css dist/styles.css
+  elif [ -f "src/styles.css" ]; then
+    cp src/styles.css dist/styles.css
+  fi
+
+  cp main.js manifest.json dist/
+  echo "==> Distribution artifacts staged:"
+  ls -lh dist/
+}
+
+cmd_git_help() {
+  cat <<EOF
+======================================================================
+                  OBSIDIAN PLUGIN RELEASE WORKFLOW
+======================================================================
+Plugin:  ${PLUGIN_ID}
+Version: ${PLUGIN_VERSION}
+Repo:    ${REPO_URL}
+
+1. Build production bundle and stage assets:
+   ./dev.sh release
+
+2. Stage source files and commit bump:
+   git add -A
+   git commit -m "chore(release): bump to version ${PLUGIN_VERSION}"
+
+3. Push changes and create version tag:
+   git push origin main
+   git tag -a "${PLUGIN_VERSION}" -m "Release ${PLUGIN_VERSION}"
+   git push origin "${PLUGIN_VERSION}"
+
+----------------------------------------------------------------------
+                           GITHUB RELEASES
+----------------------------------------------------------------------
+Web Interface:
+  1. Open: ${REPO_URL}/releases/new?tag=${PLUGIN_VERSION}
+  2. Upload ONLY the compiled binary assets from ./dist/:
+     - dist/manifest.json
+     - dist/main.js
+     - dist/styles.css (if present)
+
+GitHub CLI:
+  gh release create "${PLUGIN_VERSION}" dist/* --title "${PLUGIN_VERSION}" --notes "Release ${PLUGIN_VERSION}"
+======================================================================
+EOF
+}
+
+cmd_help() {
+  cat <<EOF
+Usage: ./dev.sh [command]
+
+Detected Plugin : ${PLUGIN_ID} (v${PLUGIN_VERSION})
+Vault Target    : ${VAULT_PLUGIN_DIR}
+
+Commands:
+  setup     Run npm install and establish vault symlink without starting build
+  dev       Verify dependencies, establish symlink, and start npm run dev (watch)
+  build     Verify dependencies, establish symlink, and run production build
+  link      Create/verify symlink from this repository to your vault
+  check     Run tsc, ESLint (if configured), and production build
+  release   Run full check suite and copy release assets into ./dist/
+  git       Print Git tag and GitHub release commands
+  help      Display this message
+EOF
+}
+
+case "${1:-help}" in
+setup) cmd_setup ;;
+dev) cmd_dev ;;
+build) cmd_build ;;
+link) cmd_link ;;
+check) cmd_check ;;
+release) cmd_release ;;
+git) cmd_git_help ;;
+help | -h | --help) cmd_help ;;
+*)
+  echo "Unknown command: $1"
+  echo ""
+  cmd_help
+  exit 1
+  ;;
+esac
+</file>
+
+<file path="esbuild.config.mjs">
+import esbuild from "esbuild";
+import process from "process";
+import builtins from "builtin-modules";
+
+const banner = `/*
+THIS IS A GENERATED/BUNDLED FILE BY ESBUILD
+if you want to view the source, please visit the github repository of this plugin
+*/
+`;
+
+const prod = process.argv[2] === "production";
+
+const context = await esbuild.context({
+  banner: {
+    js: banner,
+  },
+  entryPoints: ["src/load.ts"], // or your entry file
+  bundle: true,
+  external: [
+    "obsidian",
+    "electron",
+    "@codemirror/autocomplete",
+    "@codemirror/collab",
+    "@codemirror/commands",
+    "@codemirror/language",
+    "@codemirror/lint",
+    "@codemirror/search",
+    "@codemirror/state",
+    "@codemirror/view",
+    "@lezer/common",
+    "@lezer/highlight",
+    "@lezer/lr",
+    ...builtins,
+  ],
+  format: "cjs",
+  target: "es2018",
+  logLevel: "info",
+  sourcemap: prod ? false : "inline",
+  treeShaking: true,
+  outfile: "main.js",
+  minify: prod,
+});
+
+if (prod) {
+  await context.rebuild();
+  process.exit(0);
+} else {
+  await context.watch();
+}
+</file>
+
+<file path="eslint.config.mjs">
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+
+export default tseslint.config(
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
+      "no-prototype-builtins": "off",
+    },
+  },
+  {
+    ignores: [
+      "main.js",
+      "main.js.map",
+      "styles.css",
+      "dist/**",
+      "node_modules/**",
+      "esbuild.config.mjs",
+    ],
+  },
+);
+</file>
+
+<file path="package.json">
+{
+  "name": "featherweight-local-wallpaper",
+  "version": "1.0.0",
+  "description": "Minimal, zero-overhead background wallpaper plugin supporting local vault files and remote URLs via CSS variables.",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "node esbuild.config.mjs production",
+    "lint": "eslint.",
+    "check": "tsc --noEmit && npm run lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MidoriNoHoshi/featherweight-local-wallpaper.git"
+  },
+  "keywords": [
+    "obsidian",
+    "obsidian-plugin",
+    "wallpaper",
+    "background"
+  ],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MidoriNoHoshi/featherweight-local-wallpaper/issues"
+  },
+  "homepage": "https://github.com/MidoriNoHoshi/featherweight-local-wallpaper#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.4.1",
+    "builtin-modules": "^5.3.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.10.0",
+    "obsidian": "^1.13.1",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.69.0"
+  }
+}
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "inlineSources": true,
+    "inlineSourceMap": true,
+    "module": "ESNext",
+    "target": "ES6",
+    "allowJs": true,
+    "noImplicitAny": true,
+    "moduleResolution": "node",
+    "importHelpers": true,
+    "isolatedModules": true,
+    "strictNullChecks": true,
+    "lib": ["DOM", "ES5", "ES6", "ES7", "ESNext"]
+  },
+  "include": ["**/*.ts"]
+}
+</file>
+
+<file path="manifest.json">
+{
+  "id": "featherweight-local-wallpaper",
+  "name": "Featherweight Local Wallpaper",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "Minimal, zero-overhead background wallpaper plugin supporting local vault files and remote URLs via CSS variables.",
+  "author": "MidoriNoHoshi",
+  "authorUrl": "https://github.com/MidoriNoHoshi",
+  "isDesktopOnly": false
+}
+</file>
+
+<file path="README.md">
+# Featherweight Local Wallpaper
+
+A minimal, zero-overhead background wallpaper plugin for Obsidian. Set custom wallpapers for your active editor and file navigator using local vault files or remote URLs—rendered directly via GPU-accelerated CSS variables without heavy JavaScript loops or local servers.
+
+---
+
+## Features
+
+- **Local & Remote Support:** Use images stored directly inside your vault (e.g., `attachments/wallpaper.png`) or external web URLs (`https://...`). No localhost web servers required.
+
+- **Zero-Overhead Architecture:** Uses native Obsidian resource paths and pure CSS custom properties (`var(--...)`). Rendering, scaling, and opacity are offloaded directly to Chromium's GPU compositor.
+
+- **Independent Layout Targets:** Configure unique wallpapers, opacity, and blur settings separately for the **Markdown Editor** and the **File Navigator**.
+
+- **Visual Fine-Tuning:**
+  - Adjustable opacity ($0\text{–}100\%$)
+  - Native Gaussian blur slider ($0\text{–}40\text{ px}$)
+  - Translucent contrast overlay for text legibility
+  - Darkness overlay slider for high-brightness images
+
+---
+
+## Usage
+
+1. **Settings -> Featherweight Local Wallpaper**
+
+2. Drag & drop your wallpaper into the box.
+
+---
+
+### Installation
+
+#### From Community Plugins (Recommended)
+
+1. Open Obsidian **Settings** → **Community plugins**.
+2. Turn off **Restricted mode**.
+3. Search for **Featherweight Local Wallpaper** and click **Install**, then **Enable**.
+
+#### Manual Installation
+
+1. Download `manifest.json`, `main.js`, and `styles.css` from the latest [GitHub Release](https://github.com/MidoriNoHoshi/featherweight-local-wallpaper/releases).
+
+2. Create a folder named `featherweight-local-wallpaper` inside your vault's plugin folder:
+
+   ```text
+   <your-vault>/.obsidian/plugins/featherweight-local-wallpaper/
+   ```
+
+3. Move the three downloaded files into that folder (manifest.json, styles.css, main.js)
+
+4. Reload Obsidian and enable the plugin in **Community plugins.**
+</file>
+
+<file path="styles.css">
+.markdown-reading-view:before,
+.cm-editor:before {
+  content: "";
+  background-blend-mode: overlay;
+  background-repeat: no-repeat;
+  background-image: var(--obsidian-editor-background-image);
+  background-position: center;
+  background-size: cover;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  opacity: var(--obsidian-editor-background-opacity);
+  filter: blur(var(--obsidian-editor-background-bluriness, 0px));
+  background-color: var(
+    --obsidian-editor-background-darkness-overlay,
+    rgba(0, 0, 0, 0)
+  );
+  pointer-events: none;
+}
+
+.markdown-reading-view:before,
+.cm-editor:before,
+.nav-files-container::before {
+  transform: translateZ(0);
+  will-change: transform;
+  contain: strict;
+}
+
+.nav-files-container {
+  position: relative;
+  z-index: 4;
+}
+
+.wallpaper-drag-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  height: 110px;
+  margin: 10px 0 16px 0;
+  border: 2px dashed var(--text-muted);
+  border-radius: 8px;
+  background-color: var(--background-secondary);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+  user-select: none;
+}
+
+.wallpaper-drag-drop-plus {
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 300;
+}
+
+.wallpaper-drag-drop-text {
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+
+.wallpaper-drag-drop.is-dragover {
+  border-color: var(--interactive-accent);
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.nav-files-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--obsidian-nav-background-pos);
+  background-size: cover;
+  background-position: center;
+  z-index: -1;
+  background-blend-mode: overlay;
+  opacity: var(--obsidian-nav-background-posOpacity);
+  filter: blur(var(--obsidian-nav-background-Posblur, 0px));
+  pointer-events: none;
+}
+
+.nav-header {
+  position: relative;
+  z-index: 1;
+}
+
+.nav-folder-title[data-path="/"] {
+  padding-top: 1em;
+}
+
+.nav-folder-title-content,
+.nav-file-title-content {
+  text-shadow: var(--obsidian-nav-text-shadow, none);
+}
+
+.nav-folder {
+  position: relative;
+  z-index: 2;
+}
+</file>
+
+</files>

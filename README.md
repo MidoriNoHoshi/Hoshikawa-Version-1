@@ -1,4 +1,51 @@
-# Hoshikawa Version #1 custom background plugin.
+# Featherweight Local Wallpaper
+
+A minimal, zero-overhead background wallpaper plugin for Obsidian. Set custom wallpapers for your active editor and file navigator using local vault files or remote URLs—rendered directly via GPU-accelerated CSS variables without heavy JavaScript loops or local servers.
+
 ---
-This plugin allows the user to set a custom background in a Obsidian Workspace (including the file navigator). The images for the custom background need to be hosted on a remote server, and the plugin will not work with local images. 
-There are a few additional features that allow the user to add effects to the images (such as bluriness or opacity) to improve legibility.
+
+## Features
+
+- **Local & Remote Support:** Use images stored directly inside your vault (e.g., `attachments/wallpaper.png`) or external web URLs (`https://...`). No localhost web servers required.
+
+- **Zero-Overhead Architecture:** Uses native Obsidian resource paths and pure CSS custom properties (`var(--...)`). Rendering, scaling, and opacity are offloaded directly to Chromium's GPU compositor.
+
+- **Independent Layout Targets:** Configure unique wallpapers, opacity, and blur settings separately for the **Markdown Editor** and the **File Navigator**.
+
+- **Visual Fine-Tuning:**
+  - Adjustable opacity ($0\text{–}100\%$)
+  - Native Gaussian blur slider ($0\text{–}40\text{ px}$)
+  - Translucent contrast overlay for text legibility
+  - Darkness overlay slider for high-brightness images
+
+---
+
+## Usage
+
+1. **Settings -> Featherweight Local Wallpaper**
+
+2. Drag & drop your wallpaper into the box.
+
+---
+
+### Installation
+
+#### From Community Plugins (Recommended)
+
+1. Open Obsidian **Settings** → **Community plugins**.
+2. Turn off **Restricted mode**.
+3. Search for **Featherweight Local Wallpaper** and click **Install**, then **Enable**.
+
+#### Manual Installation
+
+1. Download `manifest.json`, `main.js`, and `styles.css` from the latest [GitHub Release](https://github.com/MidoriNoHoshi/featherweight-local-wallpaper/releases).
+
+2. Create a folder named `featherweight-local-wallpaper` inside your vault's plugin folder:
+
+   ```text
+   <your-vault>/.obsidian/plugins/featherweight-local-wallpaper/
+   ```
+
+3. Move the three downloaded files into that folder (manifest.json, styles.css, main.js)
+
+4. Reload Obsidian and enable the plugin in **Community plugins.**
