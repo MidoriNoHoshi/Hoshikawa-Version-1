@@ -26,7 +26,7 @@ export const DEFAULT_VALUES: SettingsView = {
 };
 
 export default class FeatherweightWallpaper extends Plugin {
-  settings: SettingsView;
+  settings!: SettingsView;
 
   async onload() {
     await this.loadSettings();
@@ -52,7 +52,8 @@ export default class FeatherweightWallpaper extends Plugin {
   }
 
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_VALUES, await this.loadData());
+    const loadedData = (await this.loadData()) as Partial<SettingsView> | null;
+    this.settings = Object.assign({}, DEFAULT_VALUES, loadedData ?? {});
   }
 
   async saveSettings() {

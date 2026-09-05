@@ -9,6 +9,55 @@ export class URL_SettingsTab extends PluginSettingTab {
     this.plugin = plugin;
   }
 
+  getSettingDefinitions() {
+    return [
+      {
+        name: "Reset to defaults",
+        description:
+          "Restore all background properties to default blank settings.",
+      },
+      {
+        name: "Image source",
+        description:
+          "Vault relative path (e.g., 'attachments/bg.png'), remote URL, or drop below.",
+      },
+      {
+        name: "Opacity",
+        description: "Adjust transparency (0 to 100%)",
+      },
+      {
+        name: "Blur",
+        description: "Apply gaussian blur in pixels",
+      },
+      {
+        name: "Contrast overlay",
+        description:
+          "Translucent contrast layer behind text to maintain legibility",
+      },
+      {
+        name: "Darkness overlay",
+        description: "Dim the background image (0 to 100%)",
+      },
+      {
+        name: "File navigator image source",
+        description: "Vault relative path, remote URL, or drop below.",
+      },
+      {
+        name: "File navigator opacity",
+        description: "Adjust transparency (0 to 100%)",
+      },
+      {
+        name: "File navigator blur",
+        description: "Apply gaussian blur in pixels",
+      },
+      {
+        name: "File navigator text shadow",
+        description:
+          "Adjust text shadow intensity for legibility (0 to disable)",
+      },
+    ];
+  }
+
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
@@ -19,14 +68,16 @@ export class URL_SettingsTab extends PluginSettingTab {
       .addButton((button) => {
         button
           .setButtonText("Reset")
-          .setWarning()
-          .onClick(async () => {
-            await this.plugin.resetSettings();
-            this.display();
+          .setDestructive()
+          .onClick(() => {
+            void (async () => {
+              await this.plugin.resetSettings();
+              this.display();
+            })();
           });
       });
 
-    containerEl.createEl("h3", { text: "Editor Background" });
+    new Setting(containerEl).setName("Editor Background").setHeading();
 
     new Setting(containerEl)
       .setName("Image source")
@@ -99,7 +150,7 @@ export class URL_SettingsTab extends PluginSettingTab {
           }),
       );
 
-    containerEl.createEl("h3", { text: "File Navigator Background" });
+    new Setting(containerEl).setName("File Navigator Background").setHeading();
 
     new Setting(containerEl)
       .setName("File navigator image source")
@@ -197,80 +248,89 @@ export class URL_SettingsTab extends PluginSettingTab {
       dropBox.removeClass("is-dragover");
     });
 
-    dropBox.addEventListener("drop", async (e: DragEvent) => {
+    dropBox.addEventListener("drop", (e: DragEvent) => {
       preventDefault(e);
       dropBox.removeClass("is-dragover");
 
-      const files = e.dataTransfer?.files;
-      if (files && files.length > 0) {
-        const file = files[0];
-        if (this.isImageFile(file.name)) {
-          const buffer = await file.arrayBuffer();
-          const folder = "_wallpapers";
+      void (async () => {
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) {
+          const file = files[0];
+          if (file && this.isImageFile(file.name)) {
+            const buffer = await file.arrayBuffer();
+            const folder = "_wallpapers";
 
-          const folderExists = this.app.vault.getAbstractFileByPath(folder);
-          if (!folderExists) {
-            await this.app.vault.createFolder(folder);
+            const folderExists = this.app.vault.getAbstractFileByPath(folder);
+            if (!folderExists) {
+              await this.app.vault.createFolder(folder);
+            }
+
+            const targetPath = normalizePath(`${folder}/${file.name}`);
+            let targetFile = this.app.vault.getAbstractFileByPath(targetPath);
+
+            if (targetFile instanceof TFile) {
+              await this.app.vault.modifyBinary(targetFile, buffer);
+            } else {
+              targetFile = await this.app.vault.createBinary(
+                targetPath,
+                buffer,
+              );
+            }
+
+            if (targetFile instanceof TFile) {
+              this.plugin.settings[targetKey] = targetFile.path;
+            } else {
+              this.plugin.settings[targetKey] = targetPath;
+            }
+
+            await this.plugin.saveSettings();
+            this.plugin.updateBackground();
+            this.display();
+            return;
+          }
+        }
+
+        const rawData =
+          e.dataTransfer?.getData("text/plain") ||
+          e.dataTransfer?.getData("text/uri-list") ||
+          "";
+
+        if (rawData) {
+          let candidatePath =
+            rawData
+              .replace(/^\[\[(.*?)\]\]$/, "$1")
+              .split("\n")[0]
+              ?.trim() ?? "";
+
+          if (candidatePath.includes("?file=")) {
+            try {
+              const parsedUrl = new URL(candidatePath);
+              const fileParam = parsedUrl.searchParams.get("file");
+              if (fileParam) candidatePath = decodeURIComponent(fileParam);
+            } catch {
+              // Ignore URI parse failures on internal links
+            }
           }
 
-          const targetPath = normalizePath(`${folder}/${file.name}`);
-          let targetFile = this.app.vault.getAbstractFileByPath(targetPath);
-
-          if (targetFile instanceof TFile) {
-            await this.app.vault.modifyBinary(targetFile, buffer);
-          } else {
-            targetFile = await this.app.vault.createBinary(targetPath, buffer);
+          let targetFile = this.app.vault.getAbstractFileByPath(candidatePath);
+          if (!targetFile) {
+            targetFile = this.app.metadataCache.getFirstLinkpathDest(
+              candidatePath,
+              "",
+            );
           }
 
-          if (targetFile instanceof TFile) {
+          if (
+            targetFile instanceof TFile &&
+            this.isImageFile(targetFile.name)
+          ) {
             this.plugin.settings[targetKey] = targetFile.path;
-          } else {
-            this.plugin.settings[targetKey] = targetPath;
-          }
-
-          await this.plugin.saveSettings();
-          this.plugin.updateBackground();
-          this.display();
-          return;
-        }
-      }
-
-      const rawData =
-        e.dataTransfer?.getData("text/plain") ||
-        e.dataTransfer?.getData("text/uri-list") ||
-        "";
-
-      if (rawData) {
-        let candidatePath = rawData
-          .replace(/^\[\[(.*?)\]\]$/, "$1")
-          .split("\n")[0]
-          .trim();
-
-        if (candidatePath.includes("?file=")) {
-          try {
-            const parsedUrl = new URL(candidatePath);
-            const fileParam = parsedUrl.searchParams.get("file");
-            if (fileParam) candidatePath = decodeURIComponent(fileParam);
-          } catch {
-            // Ignore URI parse failures on internal links
+            await this.plugin.saveSettings();
+            this.plugin.updateBackground();
+            this.display();
           }
         }
-
-        let targetFile = this.app.vault.getAbstractFileByPath(candidatePath);
-        if (!targetFile) {
-          targetFile = this.app.metadataCache.getFirstLinkpathDest(
-            candidatePath,
-            "",
-          );
-        }
-
-        if (targetFile instanceof TFile && this.isImageFile(targetFile.name)) {
-          this.plugin.settings[targetKey] = targetFile.path;
-          await this.plugin.saveSettings();
-          this.plugin.updateBackground();
-          this.display();
-        }
-      }
+      })();
     });
   }
 
