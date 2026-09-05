@@ -1,22 +1,22 @@
 # Featherweight Local Wallpaper
 
-A minimal, zero-overhead background wallpaper plugin for Obsidian. Set custom wallpapers for your active editor and file navigator using local vault files or remote URLs—rendered directly via GPU-accelerated CSS variables without heavy JavaScript loops or local servers.
+0-overhead background wallpaper plugin => Obsidian. Supports drag & drop to set local images without a local web-server (+ file-nav wallpaper).
+Rendered directly via GPU-accelerated CSS variables.
 
 ---
 
 ## Features
 
-- **Local & Remote Support:** Use images stored directly inside your vault (e.g., `attachments/wallpaper.png`) or external web URLs (`https://...`). No localhost web servers required.
+- **Local & Remote Support:** Use local images on your system. (e.g., `~/Downloads/wallpaper.png`) or external web URLs (`https://...`).
 
 - **Zero-Overhead Architecture:** Uses native Obsidian resource paths and pure CSS custom properties (`var(--...)`). Rendering, scaling, and opacity are offloaded directly to Chromium's GPU compositor.
-
-- **Independent Layout Targets:** Configure unique wallpapers, opacity, and blur settings separately for the **Markdown Editor** and the **File Navigator**.
 
 - **Visual Fine-Tuning:**
   - Adjustable opacity ($0\text{–}100\%$)
   - Native Gaussian blur slider ($0\text{–}40\text{ px}$)
   - Translucent contrast overlay for text legibility
   - Darkness overlay slider for high-brightness images
+  - (etc. Maybe add text-colour later)
 
 ---
 
