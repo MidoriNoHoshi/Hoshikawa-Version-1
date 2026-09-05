@@ -1,6 +1,6 @@
 {
   "name": "featherweight-local-wallpaper",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Minimal, zero-overhead background wallpaper plugin supporting local vault files and remote URLs via CSS variables.",
   "main": "main.js",
   "scripts": {
